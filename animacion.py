@@ -81,18 +81,19 @@ class AnimadorProyectil:
         """Configura los límites fijos, fondos y elementos visuales estáticos."""
         self.ax.clear()
         
-        max_x = max(self.res_ideal.alcance_maximo, self.res_real.alcance_maximo) * 1.08
+        min_x = min(0.0, float(np.min(self.x_ideal)), float(np.min(self.x_real)))
+        max_x = max(float(np.max(self.x_ideal)), float(np.max(self.x_real)), self.res_ideal.alcance_maximo, self.res_real.alcance_maximo) * 1.08
         max_y = max(self.res_ideal.altura_maxima, self.res_real.altura_maxima) * 1.25
 
-        self.ax.set_xlim(-2, max_x)
-        self.ax.set_ylim(-2, max_y)
+        self.ax.set_xlim(min(min_x - 2, -2), max(max_x, 10.0))
+        self.ax.set_ylim(-2, max(max_y, 5.0))
         self.ax.set_xlabel("Distancia Horizontal $x$ [m]", fontsize=11, fontweight="bold")
         self.ax.set_ylabel("Altura Vertical $y$ [m]", fontsize=11, fontweight="bold")
         self.ax.set_title("Animación Dinámica del Vuelo: Trayectoria Ideal vs Real", fontsize=13, fontweight="bold", pad=12)
         
         # Suelo
         self.ax.axhline(0, color="#37474F", linewidth=2.0, zorder=2)
-        self.ax.fill_between([-5, max_x + 10], [-5, -5], [0, 0], color="#ECEFF1", zorder=1)
+        self.ax.fill_between([min(min_x - 5, -5), max(max_x + 10, 20.0)], [-5, -5], [0, 0], color="#ECEFF1", zorder=1)
         self.ax.grid(True, linestyle="--", alpha=0.5)
 
         # Elementos dinámicos a actualizar en cada frame

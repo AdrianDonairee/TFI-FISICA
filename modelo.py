@@ -98,7 +98,8 @@ class Proyectil:
         self,
         vx: float,
         vy: float,
-        con_resistencia: bool = True
+        con_resistencia: bool = True,
+        viento_x: float = 0.0
     ) -> Tuple[float, float]:
         """
         Calcula las componentes de la aceleración instantánea (ax, ay).
@@ -108,12 +109,14 @@ class Proyectil:
         Ideal:
             ax = 0
             ay = -g
-        Con resistencia cuadrática:
-            v = sqrt(vx^2 + vy^2)
-            Fdx = -b * v * vx
-            Fdy = -b * v * vy
-            ax = Fdx / m = -(b/m) * v * vx
-            ay = -g + Fdy / m = -g - (b/m) * v * vy
+        Con resistencia cuadrática y viento horizontal:
+            v_rel_x = vx - viento_x
+            v_rel_y = vy
+            v_rel = sqrt(v_rel_x^2 + v_rel_y^2)
+            Fdx = -b * v_rel * v_rel_x
+            Fdy = -b * v_rel * v_rel_y
+            ax = Fdx / m = -(b/m) * v_rel * (vx - viento_x)
+            ay = -g + Fdy / m = -g - (b/m) * v_rel * vy
 
         Parámetros:
         -----------
@@ -123,6 +126,8 @@ class Proyectil:
             Componente de velocidad vertical [m/s].
         con_resistencia : bool
             True para incluir fuerza de arrastre, False para caída libre ideal.
+        viento_x : float
+            Velocidad del viento horizontal en [m/s] (positivo a favor, negativo en contra).
 
         Retorna:
         --------
@@ -132,18 +137,21 @@ class Proyectil:
         if not con_resistencia:
             return 0.0, -self._g
 
-        v_mag = np.hypot(vx, vy)
+        v_rel_x = vx - viento_x
+        v_rel_y = vy
+        v_rel_mag = np.hypot(v_rel_x, v_rel_y)
         factor_arrastre = self.constante_arrastre_b / self._masa
         
-        ax = -factor_arrastre * v_mag * vx
-        ay = -self._g - (factor_arrastre * v_mag * vy)
+        ax = -factor_arrastre * v_rel_mag * v_rel_x
+        ay = -self._g - (factor_arrastre * v_rel_mag * v_rel_y)
         return ax, ay
 
     def derivadas(
         self,
         t: float,
         estado: np.ndarray,
-        con_resistencia: bool = True
+        con_resistencia: bool = True,
+        viento_x: float = 0.0
     ) -> np.ndarray:
         """
         Vector de derivadas de primer orden dS/dt para el sistema dinámico.
@@ -159,6 +167,8 @@ class Proyectil:
             Vector de estado [x, y, vx, vy].
         con_resistencia : bool
             Bandera para activar o desactivar el rozamiento aerodinámico.
+        viento_x : float
+            Velocidad del viento horizontal [m/s].
 
         Retorna:
         --------
@@ -166,7 +176,7 @@ class Proyectil:
             Vector dS/dt = [vx, vy, ax, ay].
         """
         _, _, vx, vy = estado
-        ax, ay = self.calcular_aceleraciones(vx, vy, con_resistencia=con_resistencia)
+        ax, ay = self.calcular_aceleraciones(vx, vy, con_resistencia=con_resistencia, viento_x=viento_x)
         return np.array([vx, vy, ax, ay], dtype=float)
 
     # --- Integradores Numéricos ---
@@ -175,13 +185,14 @@ class Proyectil:
         t: float,
         estado: np.ndarray,
         dt: float,
-        con_resistencia: bool = True
+        con_resistencia: bool = True,
+        viento_x: float = 0.0
     ) -> np.ndarray:
         """
         Avanza el estado del proyectil un paso dt mediante el Método de Euler hacia adelante:
         S(t + dt) = S(t) + dt * f(t, S(t))
         """
-        dS = self.derivadas(t, estado, con_resistencia=con_resistencia)
+        dS = self.derivadas(t, estado, con_resistencia=con_resistencia, viento_x=viento_x)
         return estado + dt * dS
 
     def paso_rk4(
@@ -189,16 +200,17 @@ class Proyectil:
         t: float,
         estado: np.ndarray,
         dt: float,
-        con_resistencia: bool = True
+        con_resistencia: bool = True,
+        viento_x: float = 0.0
     ) -> np.ndarray:
         """
         Avanza el estado del proyectil un paso dt mediante el Método de Runge-Kutta de 4to Orden (RK4).
         Proporciona un error de truncamiento local de O(dt^5) y global de O(dt^4).
         """
-        k1 = self.derivadas(t, estado, con_resistencia=con_resistencia)
-        k2 = self.derivadas(t + 0.5 * dt, estado + 0.5 * dt * k1, con_resistencia=con_resistencia)
-        k3 = self.derivadas(t + 0.5 * dt, estado + 0.5 * dt * k2, con_resistencia=con_resistencia)
-        k4 = self.derivadas(t + dt, estado + dt * k3, con_resistencia=con_resistencia)
+        k1 = self.derivadas(t, estado, con_resistencia=con_resistencia, viento_x=viento_x)
+        k2 = self.derivadas(t + 0.5 * dt, estado + 0.5 * dt * k1, con_resistencia=con_resistencia, viento_x=viento_x)
+        k3 = self.derivadas(t + 0.5 * dt, estado + 0.5 * dt * k2, con_resistencia=con_resistencia, viento_x=viento_x)
+        k4 = self.derivadas(t + dt, estado + dt * k3, con_resistencia=con_resistencia, viento_x=viento_x)
 
         return estado + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
 

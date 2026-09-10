@@ -104,20 +104,27 @@ class GraficadorTrayectoria:
             ax.scatter([res_ideal.alcance_maximo], [0], color="#1E88E5", s=60, marker="X", zorder=5)
         ax.scatter([res_real.alcance_maximo], [0], color="#D81B60", s=60, marker="X", zorder=5)
 
-        # Área sombreada entre curvas para destacar la disipación de energía
+        # Área sombreada entre curvas para destacar la variación por arrastre
         if res_ideal:
-            x_interp = np.linspace(0, min(res_ideal.alcance_maximo, res_real.alcance_maximo), 300)
-            y_ideal_interp = np.interp(x_interp, res_ideal.x, res_ideal.y)
-            y_real_interp = np.interp(x_interp, res_real.x, res_real.y)
-            ax.fill_between(x_interp, y_ideal_interp, y_real_interp, color="#FFC107", alpha=0.18, label="Pérdida por Arrastre")
+            min_alcance = min(res_ideal.alcance_maximo, res_real.alcance_maximo)
+            if min_alcance > 0:
+                x_interp = np.linspace(0, min_alcance, 300)
+                y_ideal_interp = np.interp(x_interp, res_ideal.x, res_ideal.y)
+                y_real_interp = np.interp(x_interp, res_real.x, res_real.y)
+                ax.fill_between(x_interp, y_ideal_interp, y_real_interp, color="#FFC107", alpha=0.18, label="Pérdida por Arrastre")
 
         # Ajustes de ejes y detalles visuales
         ax.axhline(0, color="black", linewidth=1.2, linestyle="-")
         ax.set_title("Comparación de Trayectorias 2D: Tiro Ideal vs Tiro Real con Resistencia del Aire", pad=12, fontweight="bold")
         ax.set_xlabel("Distancia Horizontal $x$ [m]")
         ax.set_ylabel("Altura Vertical $y$ [m]")
-        ax.set_xlim(left=-2, right=(res_ideal.alcance_maximo * 1.08 if res_ideal else res_real.alcance_maximo * 1.1))
-        ax.set_ylim(bottom=-1, top=(res_ideal.altura_maxima * 1.25 if res_ideal else res_real.altura_maxima * 1.3))
+
+        min_x = min(0.0, float(np.min(res_real.x)), float(np.min(res_ideal.x)) if res_ideal else 0.0)
+        max_x = max(float(np.max(res_real.x)), float(np.max(res_ideal.x)) if res_ideal else 0.0) * 1.08
+        max_y = max(res_ideal.altura_maxima if res_ideal else 0.0, res_real.altura_maxima) * 1.25
+
+        ax.set_xlim(left=min(min_x - 2, -2), right=max(max_x, 10.0))
+        ax.set_ylim(bottom=-1, top=max(max_y, 5.0))
         ax.grid(True, linestyle="--", alpha=0.6)
         ax.legend(loc="upper right", frameon=True, shadow=True)
 

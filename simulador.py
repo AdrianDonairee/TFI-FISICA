@@ -56,7 +56,8 @@ class SimuladorTiro:
         v0: float = 65.0,
         angulo_grados: float = 45.0,
         x0: float = 0.0,
-        y0: float = 0.0
+        y0: float = 0.0,
+        viento_x: float = 0.0
     ) -> None:
         """
         Inicializa el simulador con las condiciones de contorno iniciales.
@@ -73,6 +74,8 @@ class SimuladorTiro:
             Posición inicial en el eje X [m].
         y0 : float
             Posición inicial en el eje Y [m] (altura de lanzamiento).
+        viento_x : float
+            Velocidad del viento horizontal [m/s] (positivo a favor, negativo en contra).
         """
         if v0 <= 0:
             raise ValueError("La rapidez inicial v0 debe ser estrictamente positiva.")
@@ -87,6 +90,7 @@ class SimuladorTiro:
         self.theta_rad = np.radians(self.angulo_grados)
         self.x0 = float(x0)
         self.y0 = float(y0)
+        self.viento_x = float(viento_x)
 
         # Componentes iniciales de velocidad
         self.vx0 = self.v0 * np.cos(self.theta_rad)
@@ -176,7 +180,11 @@ class SimuladorTiro:
 
         # Bucle de integración temporal
         while t_actual < t_max:
-            estado_siguiente = integrador(t_actual, estado, dt, con_resistencia=con_resistencia)
+            estado_siguiente = integrador(
+                t_actual, estado, dt,
+                con_resistencia=con_resistencia,
+                viento_x=self.viento_x
+            )
             t_siguiente = t_actual + dt
 
             tiempos.append(t_siguiente)
@@ -221,7 +229,9 @@ class SimuladorTiro:
         ay_list = []
         for vx_val, vy_val in zip(vx_final, vy_final):
             ax_val, ay_val = self.proyectil.calcular_aceleraciones(
-                vx_val, vy_val, con_resistencia=con_resistencia
+                vx_val, vy_val,
+                con_resistencia=con_resistencia,
+                viento_x=self.viento_x
             )
             ax_list.append(ax_val)
             ay_list.append(ay_val)
