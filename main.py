@@ -242,7 +242,6 @@ def main():
                 opciones_vis = menu.menu_opciones_visualizacion(opciones_vis)
 
             elif opcion == "0":
-                print("\n  👋 Finalizando el programa. ¡Éxitos en la defensa del TFI!")
                 break
 
             else:
