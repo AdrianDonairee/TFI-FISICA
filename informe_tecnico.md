@@ -1,202 +1,240 @@
 # TRABAJO FINAL INTEGRADOR (TFI) — FÍSICA I
-## Opción A: Simulación de Tiro Parabólico con y sin Resistencia del Aire
-**Carrera:** Ingeniería en Informática  
-**Materia:** Física I  
-**Nivel Académico:** 2do Año  
-**Tecnologías:** Python 3, NumPy, SciPy, Matplotlib  
-**Alumnos:** 
+## Simulación de Tiro Parabólico: Comparación entre Modelo Ideal y Real con Resistencia del Aire
 
-	- Diaz Cristopher
-	- Donaire Adrián 
-
----
-
-## 1. RESUMEN EJECUTIVO (ABSTRACT)
-
-El presente proyecto implementa un simulador computacional y dinámico para el análisis comparativo del movimiento de proyectiles en dos dimensiones (2D), contrastando el **modelo balístico ideal en el vacío** (solución analítica cerrada) frente al **modelo físico real con resistencia aerodinámica cuadrática del aire** ($F_d \propto v^2$).
-
-Se diseñó una arquitectura de software modular basada en **Programación Orientada a Objetos (POO)** dividida en cinco componentes independientes. Para la resolución del sistema no lineal de Ecuaciones Diferenciales Ordinarias (EDOs), se implementó el método numérico de **Runge-Kutta de 4to Orden (RK4)** y el **Método de Euler**, integrando técnicas avanzadas de **interpolación por Splines Cúbicos** y búsqueda de raíces (método de Brent) para la determinación exacta del instante de impacto y vértice de altura máxima. Los resultados se exponen mediante telemetría tabular en consola, gráficos científicos estáticos de alta resolución y una animación interactiva 2D con panel Heads-Up Display (HUD) en tiempo real.
+- **Carrera:** Ingeniería en Informática
+- **Materia:** Física I
+- **Nivel:** 2do Año
+- **Integrantes:**
+  - Diaz Cristopher
+  - Donaire Adrián
+- **Tecnologías utilizadas:** Python 3 (NumPy, SciPy, Matplotlib)
 
 ---
 
-## 2. OBJETIVOS DEL PROYECTO
+## 1. RESUMEN DEL PROYECTO
 
-### 2.1. Objetivo General
-Modelar, simular y analizar física y computacionalmente el comportamiento cinemático y dinámico de un cuerpo lanzado en un campo gravitatorio uniforme con y sin rozamiento con la atmósfera terrestre, validando la precisión de los métodos numéricos contra soluciones analíticas exactas.
+Este proyecto consiste en el desarrollo de un simulador computacional en dos dimensiones (2D) para estudiar y comparar el movimiento de un proyectil bajo dos escenarios:
 
-### 2.2. Objetivos Específicos
-1. Formular las leyes de Newton aplicadas a un cuerpo sometido al arrastre aerodinámico cuadrático $\vec{F}_d = -\frac{1}{2} C_d \rho A v \vec{v}$.
-2. Reducir las ecuaciones de movimiento de segundo orden a un sistema equivalente de EDOs de primer orden en el espacio de estados $[x, y, v_x, v_y]^T$.
-3. Desarrollar desde cero los algoritmos de integración temporal **RK4** y **Euler hacia adelante** sin dependencias de cajas negras para el paso temporal.
-4. Implementar detección de eventos de alta precisión con **SciPy** para calcular alcance máximo $x_{\text{max}}$, altura máxima $y_{\text{max}}$, tiempo de vuelo $t_{\text{vuelo}}$ y velocidad de impacto.
-5. Diseñar una suite gráfica estática y dinámica en **Matplotlib** que exponga claramente la cinemática multivariable ($x(t), y(t), v_x(t), v_y(t), a_x(t), a_y(t)$) y la asimetría de la trayectoria real.
+1. **Modelo Ideal (en el vacío):** No existe rozamiento con el aire. Solo actúa la gravedad. Este caso se resuelve mediante las fórmulas clásicas del tiro parabólico.
+2. **Modelo Real (con rozamiento del aire):** El proyectil experimenta una fuerza de frenado provocada por la resistencia aerodinámica (proporcional al cuadrado de la velocidad). Como las ecuaciones no se pueden resolver de forma directa con una fórmula simple, se utilizan métodos de cálculo numérico por computadora.
+
+El sistema fue programado en Python utilizando Programación Orientada a Objetos (POO). Permite calcular y comparar alcances, alturas, tiempos de vuelo y velocidades de impacto, mostrando los resultados en tablas, gráficos detallados y una animación interactiva con datos en tiempo real.
 
 ---
 
-## 3. MARCO TEÓRICO Y MODELADO FÍSICO-MATEMÁTICO
+## 2. OBJETIVOS
+
+### Objetivo General
+Modelar, programar y analizar el comportamiento de un proyectil lanzado en un campo gravitatorio constante, comparando la trayectoria ideal contra la trayectoria real afectada por el rozamiento del aire.
+
+### Objetivos Específicos
+1. Aplicar las leyes de Newton para modelar la fuerza de gravedad y la fuerza de resistencia del aire (arrastre aerodinámico).
+2. Implementar algoritmos de integración numérica paso a paso: **Runge-Kutta de 4to Orden (RK4)** y el **Método de Euler**.
+3. Calcular con precisión el punto de impacto en el suelo y el punto más alto alcanzado (vértice).
+4. Generar gráficos comparativos claros de trayectoria, velocidad, aceleración y una animación visual interactiva del disparo.
+
+---
+
+## 3. MODELO FÍSICO Y ECUACIONES
 
 ```
-               Y (Altura)
+               Y (Altura en metros)
                ^
-               │         Vértice (vy = 0)
-               │          .-'-.   [Trayectoria Ideal - Simétrica]
+               │         Punto más alto (Vértice)
+               │          .-'-.   [Trayectoria Ideal - Curva simétrica]
                │        .'     '.
-               │       /   .-'-. \  [Trayectoria Real - Asimétrica]
+               │       /   .-'-. \  [Trayectoria Real - Asimétrica y frenada]
                │      /  .'     '.\
                │     /  /         \ \
                │    /  /           \ \
-               └───┴──┴─────────────┴─┴──────> X (Alcance)
-                 (x0,y0)           x_real x_ideal
+               └───┴──┴─────────────┴─┴──────> X (Alcance horizontal en metros)
+                 Punto de          Impacto   Impacto
+                 Lanzamiento        Real      Ideal
 ```
 
-### 3.1. Modelo Ideal (Sin Resistencia del Aire)
-En el vacío, la única fuerza actuante es la atracción gravitatoria $\vec{F}_g = -m g \hat{j}$.
-- Aceleración: $a_x(t) = 0$, $a_y(t) = -g$.
-- Velocidad:
-  $$v_x(t) = v_0 \cos(\theta)$$
-  $$v_y(t) = v_0 \sin(\theta) - g t$$
-- Posición:
-  $$x(t) = x_0 + v_0 \cos(\theta) t$$
-  $$y(t) = y_0 + v_0 \sin(\theta) t - \frac{1}{2} g t^2$$
-- Magnitudes analíticas de referencia:
-  $$t_{\text{vuelo}} = \frac{v_0 \sin(\theta) + \sqrt{v_0^2 \sin^2(\theta) + 2 g y_0}}{g}$$
-  $$y_{\text{max}} = y_0 + \frac{v_0^2 \sin^2(\theta)}{2 g}, \quad x_{\text{alcance}} = x_0 + v_0 \cos(\theta) t_{\text{vuelo}}$$
+---
+
+### 3.1. Caso 1: Modelo Ideal (Sin rozamiento con el aire)
+
+En el vacío, la única fuerza que actúa sobre el objeto es su propio peso (gravedad hacia abajo).
+
+- **Aceleración horizontal:** `ax = 0` (la velocidad horizontal no cambia).
+- **Aceleración vertical:** `ay = -g` (la gravedad frena la subida y acelera la caída, con `g = 9.81 m/s²`).
+
+#### Fórmulas de velocidad en cada instante (t):
+- Velocidad horizontal: `vx(t) = v0 * cos(θ)`
+- Velocidad vertical: `vy(t) = v0 * sin(θ) - g * t`
+
+#### Fórmulas de posición:
+- Posición horizontal: `x(t) = x0 + vx * t`
+- Posición vertical: `y(t) = y0 + vy0 * t - 0.5 * g * t²`
+
+#### Resultados principales:
+- **Tiempo total de vuelo:** Tiempo que tarda en volver a tocar el suelo (`y = 0`).
+- **Altura máxima:** Punto donde la velocidad vertical se anula (`vy = 0`).
+- **Alcance máximo:** Distancia horizontal total recorrida.
 
 ---
 
-### 3.2. Modelo Real (Arrastre Aerodinámico Cuadrático)
-Para números de Reynolds moderados y altos ($Re > 10^3$, correspondiente a proyectiles, pelotas o proyectiles balísticos en aire), la fuerza de fricción del fluido es proporcional al cuadrado de la rapidez escalar instantánea $v = \sqrt{v_x^2 + v_y^2}$:
+### 3.2. Caso 2: Modelo Real (Con resistencia del aire)
 
-$$\vec{F}_d = -\frac{1}{2} C_d \rho A v \vec{v} = -b v \vec{v}$$
+Cuando un objeto se mueve en la atmósfera a velocidades normales o altas, el aire ejerce una fuerza de frenado opuesta a la dirección del movimiento llamada **Fuerza de Arrastre (Fd)**.
 
-Donde:
-- $\rho$: Densidad del fluido (aire a nivel del mar $\approx 1.225 \text{ kg/m}^3$).
-- $C_d$: Coeficiente de arrastre adimensional (para una esfera lisa, $C_d \approx 0.47$).
-- $A$: Área de sección transversal frontal proyectada ($A = \pi r^2$).
-- $b = \frac{1}{2} \rho C_d A$ [kg/m]: Coeficiente global de arrastre.
+#### ¿De qué depende la resistencia del aire?
+La fuerza de frenado del aire depende de cuatro factores:
+1. **Densidad del aire (ρ):** Aproximadamente `1.225 kg/m³` al nivel del mar.
+2. **Coeficiente de arrastre (Cd):** Indica qué tan aerodinámica es la forma del cuerpo (para una esfera lisa es aproximadamente `0.47`).
+3. **Área frontal (A):** La superficie frontal del proyectil (`A = π * radio²`).
+4. **Velocidad al cuadrado (v²):** A mayor velocidad, la resistencia crece de manera cuadrática.
 
-Aplicando la **Segunda Ley de Newton** $\sum \vec{F} = m \vec{a}$:
-$$\vec{F}_{\text{neta}} = \vec{F}_g + \vec{F}_d = ( -b v v_x ) \hat{i} + ( -m g - b v v_y ) \hat{j}$$
-
-Despejando las aceleraciones:
-$$\begin{cases}
-a_x = \frac{dv_x}{dt} = -\frac{b}{m} v_x \sqrt{v_x^2 + v_y^2} \\
-a_y = \frac{dv_y}{dt} = -g -\frac{b}{m} v_y \sqrt{v_x^2 + v_y^2}
-\end{cases}$$
-
-> **Nota física fundamental:** A diferencia del tiro ideal, en el modelo real las componentes horizontal ($x$) y vertical ($y$) están **fuertemente acopladas y no son lineales** debido al término de acoplamiento $v = \sqrt{v_x^2 + v_y^2}$. Por tanto, no existe solución analítica elemental cerrada, requiriendo integración numérica.
-
----
-
-## 4. MÉTODOS NUMÉRICOS E INTEGRACIÓN TEMPORAL
-
-### 4.1. Espacio de Estados
-Se define el vector de estado de dimensión 4:
-$$\mathbf{S}(t) = \begin{bmatrix} x(t) \\ y(t) \\ v_x(t) \\ v_y(t) \end{bmatrix}, \quad \frac{d\mathbf{S}}{dt} = \mathbf{f}(t, \mathbf{S}) = \begin{bmatrix} v_x \\ v_y \\ a_x(v_x, v_y) \\ a_y(v_x, v_y) \end{bmatrix}$$
-
-### 4.2. Método de Euler Hacia Adelante (Orden $\mathcal{O}(\Delta t)$)
-$$\mathbf{S}_{n+1} = \mathbf{S}_n + \Delta t \cdot \mathbf{f}(t_n, \mathbf{S}_n)$$
-*Ventaja:* Simplicidad de cómputo.  
-*Desventaja:* Error acumulativo de truncamiento local $\mathcal{O}(\Delta t^2)$ y global $\mathcal{O}(\Delta t)$.
-
-### 4.3. Método de Runge-Kutta de 4to Orden — RK4 (Orden $\mathcal{O}(\Delta t^4)$)
-El método RK4 evalúa cuatro pendientes ponderadas por cada paso de tiempo $\Delta t$:
-$$\begin{aligned}
-\mathbf{k}_1 &= \mathbf{f}(t_n, \mathbf{S}_n) \\
-\mathbf{k}_2 &= \mathbf{f}\left(t_n + \frac{\Delta t}{2}, \mathbf{S}_n + \frac{\Delta t}{2} \mathbf{k}_1\right) \\
-\mathbf{k}_3 &= \mathbf{f}\left(t_n + \frac{\Delta t}{2}, \mathbf{S}_n + \frac{\Delta t}{2} \mathbf{k}_2\right) \\
-\mathbf{k}_4 &= \mathbf{f}(t_n + \Delta t, \mathbf{S}_n + \Delta t \mathbf{k}_3) \\
-\mathbf{S}_{n+1} &= \mathbf{S}_n + \frac{\Delta t}{6} (\mathbf{k}_1 + 2\mathbf{k}_2 + 2\mathbf{k}_3 + \mathbf{k}_4)
-\end{aligned}$$
-*Ventaja:* Altísima estabilidad y precisión, con un error global de orden $\mathcal{O}(\Delta t^4)$ (aproximadamente $10^{-11} \text{ m}$ de discrepancia frente a la solución analítica ideal con $\Delta t = 10^{-3} \text{ s}$).
-
-### 4.4. Detección de Evento de Impacto por Splines Cúbicos y Método de Brent
-Cuando la integración detecta el cruce de la frontera del suelo ($y_{n+1} \le 0$):
-1. Se ajusta un polinomio spline cúbico $S_y(t)$ sobre los puntos discretos temporales.
-2. Se resuelve $S_y(t^*) = 0$ en el intervalo $[t_n, t_{n+1}]$ mediante el algoritmo de **Brent** (`scipy.optimize.root_scalar`).
-3. Se evalúan $x(t^*)$, $v_x(t^*)$ y $v_y(t^*)$ en $t^*$ para obtener el alcance exacto y la velocidad de impacto sin sesgo de paso temporal.
-
----
-
-## 5. ARQUITECTURA DE SOFTWARE Y DISEÑO POO
-
-El software se diseñó bajo los principios SOLID, con separación estricta de responsabilidades (SoC) en 5 módulos:
-
-```mermaid
-graph TD
-    A[main.py: Orquestador y CLI] --> B[modelo.py: Clase Proyectil]
-    A --> C[simulador.py: SimuladorTiro & Dataclass]
-    A --> D[grafica.py: GraficadorTrayectoria]
-    A --> E[animacion.py: AnimadorProyectil]
-    C --> B
-    D --> C
-    E --> C
+Agrupando las constantes en un único factor de resistencia `b`:
+```
+b = 0.5 * Densidad * Coeficiente_Arrastre * Área
+Fuerza_Arrastre = b * (Velocidad)²
 ```
 
-### 5.1. Descripción de los 5 Módulos
+#### Ecuaciones de movimiento (Segunda Ley de Newton):
+Al descomponer las fuerzas en los ejes X e Y:
 
-| Archivo | Responsabilidad / Contenido | Principales Clases / Métodos |
-| :--- | :--- | :--- |
-| `modelo.py` | Modelado físico, propiedades de fluidos/geométricas, EDOs e integradores. | `Proyectil`, `paso_rk4()`, `paso_euler()`, `derivadas()`, `solucion_analitica_ideal()`. |
-| `simulador.py` | Motor de simulación, gestión de eventos de cruce por cero y métricas. | `SimuladorTiro`, `ResultadoSimulacion` (Dataclass), `simular_numerico()`. |
-| `grafica.py` | Generación de reportes gráficos estáticos vectoriales y multi-panel con Matplotlib. | `GraficadorTrayectoria`, `graficar_trayectoria_2d()`, `graficar_cinematica_completa()`. |
-| `animacion.py` | Motor dinámico interactivo en tiempo real con estela y telemetría HUD. | `AnimadorProyectil`, `FuncAnimation`, `_actualizar_frame()`. |
-| `main.py` | Punto de entrada, configuración de parámetros, reporte tabular y ejecución. | `main()`, `imprimir_tabla_comparativa()`, `imprimir_parametros()`. |
+- **Eje horizontal (X):** Solo actúa la resistencia del aire frenando el proyectil:
+  ```
+  Aceleración_X = - (b / Masa) * Velocidad_Total * Velocidad_X
+  ```
+
+- **Eje vertical (Y):** Actúan la gravedad hacia abajo y la resistencia del aire opuesta al movimiento vertical:
+  ```
+  Aceleración_Y = - Gravedad - (b / Masa) * Velocidad_Total * Velocidad_Y
+  ```
+
+*(Donde la `Velocidad_Total = √(Velocidad_X² + Velocidad_Y²)`)*
+
+> **Explicación clave:** En el modelo real, la velocidad horizontal y la vertical están conectadas entre sí a través de la velocidad total. Por esta razón no existe una fórmula directa cerrada para calcular la posición en cualquier instante; es necesario calcular la trayectoria avance por avance utilizando métodos numéricos.
 
 ---
 
-## 6. ANÁLISIS DE RESULTADOS CINEMÁTICOS Y FÍSICOS
+## 4. MÉTODOS DE CÁLCULO NUMÉRICO
 
-### 6.1. Simulación Nominal de Prueba
-- **Masa ($m$):** $2.500 \text{ kg}$
-- **Radio ($r$):** $0.075 \text{ m}$ (diámetro $15 \text{ cm}$) $\rightarrow$ Área transversal $A = 0.01767 \text{ m}^2$
-- **Coeficiente de Arrastre ($C_d$):** $0.47$ (esfera)
-- **Densidad del aire ($\rho$):** $1.225 \text{ kg/m}^3$ $\rightarrow$ Factor $b = 0.005084 \text{ kg/m}$
-- **Condiciones iniciales:** $v_0 = 70.00 \text{ m/s}$ ($252 \text{ km/h}$), $\theta = 45.00^\circ$, $x_0 = 0.0 \text{ m}$, $y_0 = 0.0 \text{ m}$.
+Para conocer la posición y velocidad en cada milisegundo de la simulación, se divide el tiempo en pasos pequeños (por ejemplo, `dt = 0.001 segundos`) y se calculan las variaciones paso a paso.
 
-### 6.2. Tabla Comparativa Obtenida
+### 4.1. Método de Euler (Básico)
+Calcula el siguiente punto multiplicando la velocidad y aceleración actuales por el paso de tiempo:
+- Nueva posición = Posición actual + Velocidad * dt
+- Nueva velocidad = Velocidad actual + Aceleración * dt
 
-| Métrica Cinemática | Ideal (Analítico) | Real (Arrastre RK4) | Variación Física |
+*Es fácil de entender pero acumula errores a lo largo del tiempo si el paso no es extremadamente pequeño.*
+
+### 4.2. Método de Runge-Kutta de 4to Orden — RK4 (Avanzado y Preciso)
+En lugar de tomar solo la aceleración al inicio del intervalo, el método **RK4** calcula 4 estimaciones de la pendiente en distintos puntos del intervalo de tiempo y obtiene un promedio ponderado.
+- Brinda una **precisión extremadamente alta** (error prácticamente nulo comparado con el modelo teórico).
+- Es el método principal empleado por este simulador.
+
+### 4.3. Detección exacta del impacto en el suelo
+Durante la simulación, el último paso suele quedar ligeramente por debajo del nivel del suelo (`y < 0`). Para no cometer error en el alcance final:
+- Se utiliza una interpolación matemática para encontrar con exactitud decimal el instante en el que la altura cruza exactamente el cero (`y = 0`).
+- Esto permite obtener el alcance final y la velocidad de impacto exactos.
+
+---
+
+## 5. ESTRUCTURA Y DISEÑO DEL PROGRAMA
+
+El código fuente está organizado en 5 módulos independientes para mantener un diseño limpio, modular y fácil de mantener:
+
+```
+                  ┌───────────────────────────────┐
+                  │            main.py            │
+                  │   (Menú interactivo y CLI)    │
+                  └──────────────┬────────────────┘
+                                 │
+         ┌───────────────────────┼───────────────────────┐
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│    modelo.py    │    │   simulador.py   │    │    grafica.py    │
+│ (Física y EDOs) │    │(Motor numérico)  │    │(Gráficos 2D est.)│
+└─────────────────┘    └──────────────────┘    └──────────────────┘
+                                 │
+                                 ▼
+                       ┌──────────────────┐
+                       │   animacion.py   │
+                       │(Animación en vivo│
+                       │ y datos en HUD)  │
+                       └──────────────────┘
+```
+
+### Descripción de los Módulos:
+
+1. **`modelo.py`:** Define la clase `Proyectil` con sus propiedades físicas (masa, radio, área, coeficiente de arrastre) y las funciones de derivadas físicas e integración (RK4 y Euler).
+2. **`simulador.py`:** Contiene la clase `SimuladorTiro` que ejecuta la integración temporal paso a paso hasta que el proyectil toca el suelo y calcula las métricas finales (altura máxima, tiempo, alcance).
+3. **`grafica.py`:** Genera los gráficos estáticos comparativos:
+   - Comparación de trayectorias (Ideal vs Real).
+   - Panel cuádruple con posición, velocidad, aceleración y error a lo largo del tiempo.
+4. **`animacion.py`:** Crea una ventana interactiva donde se observa el proyectil en movimiento, su estela y un panel de telemetría (HUD) con los valores en vivo.
+5. **`main.py` / `menu.py`:** Permite al usuario elegir parámetros personalizados o ejecutar las simulaciones de prueba predeterminadas.
+
+---
+
+## 6. RESULTADOS Y ANÁLISIS COMPARATIVO
+
+### 6.1. Parámetros de la Prueba
+Para el ensayo de comparación se utilizaron los siguientes valores de prueba:
+- **Objeto:** Esfera de `2.5 kg` de masa y `15 cm` de diámetro (radio `7.5 cm`).
+- **Velocidad inicial:** `70 m/s` (equivalente a `252 km/h`).
+- **Ángulo de disparo:** `45°`.
+- **Altura inicial:** `0 m` (nivel del suelo).
+- **Aire:** Densidad de `1.225 kg/m³` y coeficiente de arrastre `0.47`.
+
+---
+
+### 6.2. Tabla Comparativa de Resultados
+
+| Variable Evaluada | Modelo Ideal (Sin Aire) | Modelo Real (Con Aire - RK4) | Diferencia / Efecto |
 | :--- | :---: | :---: | :---: |
-| **Alcance Máximo ($x_{\text{max}}$)** | $499.66 \text{ m}$ | **$278.34 \text{ m}$** | **$-44.29\ \% $** |
-| **Altura Máxima ($y_{\text{max}}$)** | $124.91 \text{ m}$ | **$93.18 \text{ m}$** | **$-25.40\ \% $** |
-| **Posición $x$ en Altura Máx.** | $249.83 \text{ m}$ | **$160.72 \text{ m}$** | Asimetría notable |
-| **Tiempo de Vuelo Total** | $10.09 \text{ s}$ | **$8.42 \text{ s}$** | **$-16.59\ \% $** |
-| **Tiempo a Altura Máxima** | $5.05 \text{ s}$ | **$4.02 \text{ s}$** | Ascenso más rápido |
-| **Velocidad de Impacto ($|v|$)|** $70.00 \text{ m/s}$ | **$44.78 \text{ m/s}$** | **$-36.03\ \% $** |
-| **Ángulo de Impacto** | $45.00^\circ$ | **$54.67^\circ$** | Caída más vertical |
-
-### 6.3. Conclusiones Físicas Relevantes
-1. **Pérdida Drástica de Alcance y Altura:** La resistencia aerodinámica disipa energía mecánica en forma de calor y turbulencia, reduciendo el alcance horizontal en más de un **$44\%$** para el proyectil analizado.
-2. **Ruptura de la Simetría Parabólica:** En el tiro ideal, el vértice se ubica exactamente en la mitad del alcance ($x_{\text{ymax}} = \frac{1}{2} x_{\text{alcance}}$). En el tiro real, la desaceleración horizontal continua desplaza el vértice hacia la derecha ($x_{\text{ymax}} \approx 57.7\%$ del recorrido real), haciendo que la fase descendente sea notablemente más empinada.
-3. **Ángulo y Velocidad de Caída:** Debido al arrastre, el proyectil impacta con una rapidez sensiblemente menor a la inicial ($44.78 \text{ m/s}$ vs $70.00 \text{ m/s}$) y con un ángulo más pronunciado ($54.67^\circ > 45^\circ$).
-4. **Validación Numérica RK4:** El error absoluto entre la solución analítica ideal y el método numérico RK4 implementado es inferior a $10^{-11} \text{ m}$, demostrando la estabilidad y exactitud del integrador.
+| **Alcance horizontal máximo** | **499.66 metros** | **278.34 metros** | **-44.3 %** (Se reduce casi a la mitad) |
+| **Altura máxima alcanzada** | **124.91 metros** | **93.18 metros** | **-25.4 %** (Sube menos por el frenado) |
+| **Posición X donde alcanza la altura máx.** | **249.83 metros** | **160.72 metros** | El punto más alto ocurre antes |
+| **Tiempo total de vuelo** | **10.09 segundos** | **8.42 segundos** | **-1.67 s** (Cae antes al suelo) |
+| **Tiempo hasta la altura máxima** | **5.05 segundos** | **4.02 segundos** | Tarda menos tiempo en subir |
+| **Velocidad al tocar el suelo** | **70.00 m/s** | **44.78 m/s** | **-36.0 %** (Llega con mucha menos energía) |
+| **Ángulo de impacto contra el suelo** | **45.0°** | **54.7°** | Cae de forma más empinada/vertical |
 
 ---
 
-## 7. GUÍA DE INSTALACIÓN Y EJECUCIÓN
+### 6.3. Conclusiones Físicas Principales
 
-### Requisitos Previos
-- Python 3.9 o superior.
-- Librerías científicas: `numpy`, `scipy`, `matplotlib`.
+1. **Gran pérdida de alcance y energía:** El rozamiento con el aire reduce el alcance del proyectil en más de un **44%**. La energía cinética inicial se va disipando en forma de calor y turbulencia en el fluido circundante.
+2. **Pérdida de la simetría de la parábola:** 
+   - En el tiro ideal, la trayectoria es una parábola perfectamente simétrica y el punto más alto está exactamente en la mitad del camino (`50%`).
+   - En el tiro real, el proyectil pierde velocidad horizontal continuamente; por eso, el punto más alto se alcanza en el primer tramo (`al 57%` respecto al punto de inicio) y luego la caída es mucho más empinada y cerrada.
+3. **Mayor ángulo y menor velocidad de impacto:** Mientras que en el vacío el proyectil aterriza a la misma velocidad con la que salió (`70 m/s`) y con el mismo ángulo (`45°`), en la realidad impacta a solo `44.78 m/s` y con un ángulo de `54.7°` (más vertical).
+4. **Eficacia del método RK4:** El método numérico Runge-Kutta de 4to Orden mostró una estabilidad y exactitud total, permitiendo simular con precisión la dinámica real no lineal.
 
-### Instalación de Dependencias
-```bash
-pip install numpy scipy matplotlib
-```
+---
 
-### Ejecución del Proyecto
+## 7. CÓMO EJECUTAR EL PROGRAMA
+
+### Requisitos
+- Tener instalado Python 3.9 o superior.
+- Librerías necesarias:
+  ```bash
+  pip install numpy scipy matplotlib
+  ```
+
+### Ejecución
+Para iniciar el simulador, abrir una consola en la carpeta del proyecto y ejecutar:
 ```bash
 python main.py
 ```
 
-### Artefactos Generados Automáticamente
-- `trayectoria_comparativa.png`: Gráfico 2D con anotaciones de vértice e impacto.
-- `cinematica_completa.png`: Panel $2 \times 2$ con $x(t), y(t), v(t), a(t)$ y curva logarítmica de error numérico.
-- **Ventana de Animación Interactiva:** Renderizado 60 FPS con telemetría HUD en tiempo real.
+### Archivos de salida generados:
+- **`trayectoria_comparativa.png`:** Imagen que compara las dos curvas con las marcas de altura máxima y punto de impacto.
+- **`cinematica_completa.png`:** Panel con 4 gráficos que detallan la evolución en el tiempo de la posición, la velocidad, la aceleración y el error numérico.
+- **Ventana de animación:** Muestra la simulación visual con controles interactivos y panel de datos en vivo.
 
 ---
 
 ## 8. CONCLUSIÓN GENERAL
 
-El proyecto cumple exhaustivamente con los requerimientos académicos del TFI de Física I para Ingeniería en Informática. Combina un modelado riguroso de mecánica newtoniana y aerodinámica con principios modernos de ingeniería de software: programación orientada a objetos, modularidad estricta, integradores numéricos de orden superior, manejo de interpolación continua de eventos y visualización interactiva.
+El desarrollo de este simulador permitió analizar en profundidad las diferencias cinemáticas y dinámicas entre el tiro parabólico ideal en el vacío y el modelo real bajo resistencia aerodinámica cuadrática:
+
+1. **Impacto del rozamiento del aire:** Se comprobó cuantitativamente que la resistencia aerodinámica altera de forma drástica el movimiento, provocando una notable pérdida de alcance horizontal (-44.3%) y altura máxima (-25.4%), además de romper la simetría de la parábola tradicional al desplazar el punto más alto hacia la primera mitad de la trayectoria y generar una fase de caída considerablemente más empinada.
+2. **Efectividad del cálculo numérico:** Dado que la resistencia cuadrática acopla los ejes horizontal y vertical impidiendo una solución analítica cerrada, la implementación del método Runge-Kutta de 4to Orden (RK4) junto con la interpolación de raíces para el contacto con el suelo demostró ser una solución numérica precisa, robusta y computacionalmente eficiente.
+3. **Aporte de la herramienta computacional:** La arquitectura modular en Python combinada con salidas gráficas y una animación interactiva en tiempo real ofrece una representación visual clara de las magnitudes cinemáticas (posición, velocidad y aceleración), facilitando la comprensión del comportamiento de proyectiles en fluidos reales.
