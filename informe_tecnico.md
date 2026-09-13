@@ -40,14 +40,14 @@ Modelar, programar y analizar el comportamiento de un proyectil lanzado en un ca
 ```
                Y (Altura en metros)
                ^
-               │         Punto más alto (Vértice)
-               │          .-'-.   [Trayectoria Ideal - Curva simétrica]
-               │        .'     '.
-               │       /   .-'-. \  [Trayectoria Real - Asimétrica y frenada]
-               │      /  .'     '.\
-               │     /  /         \ \
-               │    /  /           \ \
-               └───┴──┴─────────────┴─┴──────> X (Alcance horizontal en metros)
+               |         Punto más alto (Vértice)
+               |          .-'-.   [Trayectoria Ideal - Curva simétrica]
+               |        .'     '.
+               |       /   .-'-. \  [Trayectoria Real - Asimétrica y frenada]
+               |      /  .'     '.\
+               |     /  /         \ \
+               |    /  /           \ \
+               +---+--+-------------+-+------> X (Alcance horizontal en metros)
                  Punto de          Impacto   Impacto
                  Lanzamiento        Real      Ideal
 ```
@@ -58,16 +58,16 @@ Modelar, programar y analizar el comportamiento de un proyectil lanzado en un ca
 
 En el vacío, la única fuerza que actúa sobre el objeto es su propio peso (gravedad hacia abajo).
 
-- **Aceleración horizontal:** `ax = 0` (la velocidad horizontal no cambia).
-- **Aceleración vertical:** `ay = -g` (la gravedad frena la subida y acelera la caída, con `g = 9.81 m/s²`).
+- **Aceleración horizontal:** `ax = 0` (la velocidad horizontal se mantiene constante).
+- **Aceleración vertical:** `ay = -g` (la gravedad frena la subida y acelera la caída, con `g = 9.81 m/s^2`).
 
 #### Fórmulas de velocidad en cada instante (t):
-- Velocidad horizontal: `vx(t) = v0 * cos(θ)`
-- Velocidad vertical: `vy(t) = v0 * sin(θ) - g * t`
+- Velocidad horizontal: `vx(t) = v0 * cos(angulo)`
+- Velocidad vertical: `vy(t) = v0 * sin(angulo) - g * t`
 
 #### Fórmulas de posición:
 - Posición horizontal: `x(t) = x0 + vx * t`
-- Posición vertical: `y(t) = y0 + vy0 * t - 0.5 * g * t²`
+- Posición vertical: `y(t) = y0 + vy0 * t - 0.5 * g * t^2`
 
 #### Resultados principales:
 - **Tiempo total de vuelo:** Tiempo que tarda en volver a tocar el suelo (`y = 0`).
@@ -80,17 +80,16 @@ En el vacío, la única fuerza que actúa sobre el objeto es su propio peso (gra
 
 Cuando un objeto se mueve en la atmósfera a velocidades normales o altas, el aire ejerce una fuerza de frenado opuesta a la dirección del movimiento llamada **Fuerza de Arrastre (Fd)**.
 
-#### ¿De qué depende la resistencia del aire?
-La fuerza de frenado del aire depende de cuatro factores:
-1. **Densidad del aire (ρ):** Aproximadamente `1.225 kg/m³` al nivel del mar.
+#### Factores que determinan la resistencia del aire:
+1. **Densidad del aire (rho):** Aproximadamente `1.225 kg/m^3` al nivel del mar.
 2. **Coeficiente de arrastre (Cd):** Indica qué tan aerodinámica es la forma del cuerpo (para una esfera lisa es aproximadamente `0.47`).
-3. **Área frontal (A):** La superficie frontal del proyectil (`A = π * radio²`).
-4. **Velocidad al cuadrado (v²):** A mayor velocidad, la resistencia crece de manera cuadrática.
+3. **Área frontal (A):** La superficie frontal del proyectil (`A = pi * radio^2`).
+4. **Velocidad al cuadrado (v^2):** A mayor velocidad, la resistencia crece de manera cuadrática.
 
 Agrupando las constantes en un único factor de resistencia `b`:
 ```
 b = 0.5 * Densidad * Coeficiente_Arrastre * Área
-Fuerza_Arrastre = b * (Velocidad)²
+Fuerza_Arrastre = b * (Velocidad)^2
 ```
 
 #### Ecuaciones de movimiento (Segunda Ley de Newton):
@@ -106,9 +105,9 @@ Al descomponer las fuerzas en los ejes X e Y:
   Aceleración_Y = - Gravedad - (b / Masa) * Velocidad_Total * Velocidad_Y
   ```
 
-*(Donde la `Velocidad_Total = √(Velocidad_X² + Velocidad_Y²)`)*
+*(Donde la `Velocidad_Total = sqrt(Velocidad_X^2 + Velocidad_Y^2)`)*
 
-> **Explicación clave:** En el modelo real, la velocidad horizontal y la vertical están conectadas entre sí a través de la velocidad total. Por esta razón no existe una fórmula directa cerrada para calcular la posición en cualquier instante; es necesario calcular la trayectoria avance por avance utilizando métodos numéricos.
+> **Explicación clave:** En el modelo real, la velocidad horizontal y la vertical están acopladas entre sí mediante la velocidad total. Por esta razón no existe una fórmula directa cerrada para calcular la posición en cualquier instante; es necesario calcular la trayectoria avance por avance utilizando métodos numéricos.
 
 ---
 
@@ -140,24 +139,25 @@ Durante la simulación, el último paso suele quedar ligeramente por debajo del 
 El código fuente está organizado en 5 módulos independientes para mantener un diseño limpio, modular y fácil de mantener:
 
 ```
-                  ┌───────────────────────────────┐
-                  │            main.py            │
-                  │   (Menú interactivo y CLI)    │
-                  └──────────────┬────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│    modelo.py    │    │   simulador.py   │    │    grafica.py    │
-│ (Física y EDOs) │    │(Motor numérico)  │    │(Gráficos 2D est.)│
-└─────────────────┘    └──────────────────┘    └──────────────────┘
-                                 │
-                                 ▼
-                       ┌──────────────────┐
-                       │   animacion.py   │
-                       │(Animación en vivo│
-                       │ y datos en HUD)  │
-                       └──────────────────┘
+                  +-------------------------------+
+                  |            main.py            |
+                  |   (Menú interactivo y CLI)    |
+                  +---------------+---------------+
+                                  |
+         +------------------------+-----------------------+
+         |                        |                       |
+         v                        v                       v
++-----------------+      +------------------+    +------------------+
+|    modelo.py    |      |   simulador.py   |    |    grafica.py    |
+| (Física y EDOs) |      | (Motor numérico) |    |(Gráficos 2D est.)|
++-----------------+      +------------------+    +------------------+
+                                  |
+                                  v
+                         +------------------+
+                         |   animacion.py   |
+                         | (Animación 2D y  |
+                         |  datos en vivo)  |
+                         +------------------+
 ```
 
 ### Descripción de los Módulos:
@@ -167,7 +167,7 @@ El código fuente está organizado en 5 módulos independientes para mantener un
 3. **`grafica.py`:** Genera los gráficos estáticos comparativos:
    - Comparación de trayectorias (Ideal vs Real).
    - Panel cuádruple con posición, velocidad, aceleración y error a lo largo del tiempo.
-4. **`animacion.py`:** Crea una ventana interactiva donde se observa el proyectil en movimiento, su estela y un panel de telemetría (HUD) con los valores en vivo.
+4. **`animacion.py`:** Crea una ventana interactiva donde se observa el proyectil en movimiento, su estela y un panel de telemetría con los valores en vivo.
 5. **`main.py` / `menu.py`:** Permite al usuario elegir parámetros personalizados o ejecutar las simulaciones de prueba predeterminadas.
 
 ---
@@ -178,9 +178,9 @@ El código fuente está organizado en 5 módulos independientes para mantener un
 Para el ensayo de comparación se utilizaron los siguientes valores de prueba:
 - **Objeto:** Esfera de `2.5 kg` de masa y `15 cm` de diámetro (radio `7.5 cm`).
 - **Velocidad inicial:** `70 m/s` (equivalente a `252 km/h`).
-- **Ángulo de disparo:** `45°`.
+- **Ángulo de disparo:** `45°` (45 grados).
 - **Altura inicial:** `0 m` (nivel del suelo).
-- **Aire:** Densidad de `1.225 kg/m³` y coeficiente de arrastre `0.47`.
+- **Aire:** Densidad de `1.225 kg/m^3` y coeficiente de arrastre `0.47`.
 
 ---
 
