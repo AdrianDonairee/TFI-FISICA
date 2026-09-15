@@ -153,14 +153,11 @@ def ejecutar_simulacion_actual(
     imprimir_tabla_comparativa(resultados)
 
     # 4. Gráficos Estáticos
-    if opciones_vis["mostrar_grafico_trayectoria"] or opciones_vis["mostrar_grafico_cinematica"]:
-        print("Generando gráficos estáticos de trayectorias y cinemática...")
+    if opciones_vis["mostrar_grafico_trayectoria"]:
+        print("Generando gráfico estático de trayectoria...")
         graficador = GraficadorTrayectoria()
-        if opciones_vis["mostrar_grafico_trayectoria"]:
-            graficador.graficar_trayectoria_2d(resultados, guardar_ruta="trayectoria_comparativa.png")
-        if opciones_vis["mostrar_grafico_cinematica"]:
-            graficador.graficar_cinematica_completa(resultados, guardar_ruta="cinematica_completa.png")
-        print("Gráficos listos (Cierre las ventanas gráficas para continuar)...")
+        graficador.graficar_trayectoria_2d(resultados, guardar_ruta="trayectoria_comparativa.png")
+        print("Gráfico listo (Cierre la ventana gráfica para continuar)...")
         graficador.mostrar()
 
     # 5. Animación Dinámica
@@ -193,7 +190,6 @@ def main():
 
     opciones_vis = {
         "mostrar_grafico_trayectoria": True,
-        "mostrar_grafico_cinematica": True,
         "mostrar_animacion": True,
         "factor_velocidad": 1.0,
         "dt": 0.001

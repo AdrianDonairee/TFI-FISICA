@@ -164,9 +164,7 @@ El código fuente está organizado en 5 módulos independientes para mantener un
 
 1. **`modelo.py`:** Define la clase `Proyectil` con sus propiedades físicas (masa, radio, área, coeficiente de arrastre) y las funciones de derivadas físicas e integración (RK4 y Euler).
 2. **`simulador.py`:** Contiene la clase `SimuladorTiro` que ejecuta la integración temporal paso a paso hasta que el proyectil toca el suelo y calcula las métricas finales (altura máxima, tiempo, alcance).
-3. **`grafica.py`:** Genera los gráficos estáticos comparativos:
-   - Comparación de trayectorias (Ideal vs Real).
-   - Panel cuádruple con posición, velocidad, aceleración y error a lo largo del tiempo.
+3. **`grafica.py`:** Genera el gráfico estático comparativo de la trayectoria 2D (Ideal vs Real) con anotaciones del alcance y altura máxima.
 4. **`animacion.py`:** Crea una ventana interactiva donde se observa el proyectil en movimiento, su estela y un panel de telemetría con los valores en vivo.
 5. **`main.py` / `menu.py`:** Permite al usuario elegir parámetros personalizados o ejecutar las simulaciones de prueba predeterminadas.
 
@@ -226,7 +224,6 @@ python main.py
 
 ### Archivos de salida generados:
 - **`trayectoria_comparativa.png`:** Imagen que compara las dos curvas con las marcas de altura máxima y punto de impacto.
-- **`cinematica_completa.png`:** Panel con 4 gráficos que detallan la evolución en el tiempo de la posición, la velocidad, la aceleración y el error numérico.
 - **Ventana de animación:** Muestra la simulación visual con controles interactivos y panel de datos en vivo.
 
 ---

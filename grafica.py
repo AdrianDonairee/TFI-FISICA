@@ -6,8 +6,6 @@ Módulo: grafica.py
 ===============================================================================
 Generación de gráficos estáticos de alta calidad con Matplotlib:
 1. Trayectoria 2D (y vs x) con puntos críticos destacados (vértice e impacto).
-2. Cinemática completa (Posición vs t, Velocidad vs t, Aceleración vs t).
-3. Comparativa de Fuerzas Aerodinámicas y Error Numérico.
 """
 
 from typing import Dict, Optional
@@ -129,93 +127,6 @@ class GraficadorTrayectoria:
         ax.legend(loc="upper right", frameon=True, shadow=True)
 
         plt.tight_layout()
-        if guardar_ruta:
-            fig.savefig(guardar_ruta, dpi=300)
-        return fig
-
-    def graficar_cinematica_completa(
-        self,
-        resultados: Dict[str, ResultadoSimulacion],
-        guardar_ruta: Optional[str] = None
-    ) -> plt.Figure:
-        """
-        Genera un panel de 4 subgráficos comparando la cinemática detallada:
-        1. Posición vs Tiempo: x(t) e y(t)
-        2. Velocidad vs Tiempo: vx(t), vy(t) y magnitud total |v|(t)
-        3. Aceleración vs Tiempo: ax(t), ay(t) y magnitud total |a|(t)
-        4. Comparativa de Energía y Pérdida Numérica
-        """
-        fig, axes = plt.subplots(2, 2, figsize=(13, 9))
-
-        res_ideal = resultados.get("ideal_analitico", resultados.get("ideal_rk4"))
-        res_real = resultados["real_rk4"]
-
-        color_ideal = "#1E88E5"
-        color_real = "#D81B60"
-
-        # --- Subgráfico 1: Posición vs Tiempo ---
-        ax1 = axes[0, 0]
-        ax1.plot(res_ideal.t, res_ideal.x, label="$x(t)$ Ideal", color=color_ideal, linestyle="--", lw=1.8)
-        ax1.plot(res_ideal.t, res_ideal.y, label="$y(t)$ Ideal", color=color_ideal, linestyle=":", lw=2.0)
-        ax1.plot(res_real.t, res_real.x, label="$x(t)$ Real", color=color_real, linestyle="-", lw=1.8)
-        ax1.plot(res_real.t, res_real.y, label="$y(t)$ Real", color="#8E24AA", linestyle="-", lw=1.8)
-        ax1.set_title("Posición vs Tiempo", fontweight="bold")
-        ax1.set_xlabel("Tiempo $t$ [s]")
-        ax1.set_ylabel("Posición [m]")
-        ax1.grid(True, linestyle="--", alpha=0.6)
-        ax1.legend(loc="upper left")
-
-        # --- Subgráfico 2: Velocidad vs Tiempo ---
-        ax2 = axes[0, 1]
-        ax2.plot(res_ideal.t, res_ideal.vx, label="$v_x(t)$ Ideal", color=color_ideal, linestyle="--", lw=1.6)
-        ax2.plot(res_ideal.t, res_ideal.vy, label="$v_y(t)$ Ideal", color=color_ideal, linestyle=":", lw=1.8)
-        ax2.plot(res_ideal.t, res_ideal.v_mag, label="$|v(t)|$ Ideal", color="#0D47A1", linestyle="-.", lw=1.8)
-        
-        ax2.plot(res_real.t, res_real.vx, label="$v_x(t)$ Real", color=color_real, linestyle="-", lw=1.6)
-        ax2.plot(res_real.t, res_real.vy, label="$v_y(t)$ Real", color="#8E24AA", linestyle="-", lw=1.8)
-        ax2.plot(res_real.t, res_real.v_mag, label="$|v(t)|$ Real", color="#FF8F00", linestyle="-", lw=2.0)
-        ax2.axhline(0, color="gray", lw=0.8, linestyle="--")
-        ax2.set_title("Componentes y Magnitud de Velocidad vs Tiempo", fontweight="bold")
-        ax2.set_xlabel("Tiempo $t$ [s]")
-        ax2.set_ylabel("Velocidad [m/s]")
-        ax2.grid(True, linestyle="--", alpha=0.6)
-        ax2.legend(loc="upper right")
-
-        # --- Subgráfico 3: Aceleración vs Tiempo ---
-        ax3 = axes[1, 0]
-        ax3.plot(res_ideal.t, res_ideal.ax, label="$a_x(t)$ Ideal (0)", color=color_ideal, linestyle="--", lw=1.6)
-        ax3.plot(res_ideal.t, res_ideal.ay, label="$a_y(t)$ Ideal ($-g$)", color=color_ideal, linestyle=":", lw=1.8)
-        
-        ax3.plot(res_real.t, res_real.ax, label="$a_x(t)$ Real (Arrastre)", color=color_real, linestyle="-", lw=1.8)
-        ax3.plot(res_real.t, res_real.ay, label="$a_y(t)$ Real", color="#8E24AA", linestyle="-", lw=1.8)
-        ax3.plot(res_real.t, res_real.a_mag, label="$|a(t)|$ Real", color="#00897B", linestyle="-", lw=2.0)
-        ax3.set_title("Componentes y Magnitud de Aceleración vs Tiempo", fontweight="bold")
-        ax3.set_xlabel("Tiempo $t$ [s]")
-        ax3.set_ylabel("Aceleración [m/s$^2$]")
-        ax3.grid(True, linestyle="--", alpha=0.6)
-        ax3.legend(loc="upper right")
-
-        # --- Subgráfico 4: Análisis del Error Numérico (RK4 vs Analítico) ---
-        ax4 = axes[1, 1]
-        res_rk4_ideal = resultados.get("ideal_rk4")
-        if res_rk4_ideal and res_ideal:
-            # Interpolar para comparar mismos instantes
-            t_comun = np.linspace(0, min(res_ideal.tiempo_vuelo, res_rk4_ideal.tiempo_vuelo), 500)
-            y_analitico_interp = np.interp(t_comun, res_ideal.t, res_ideal.y)
-            y_rk4_interp = np.interp(t_comun, res_rk4_ideal.t, res_rk4_ideal.y)
-            error_y = np.abs(y_analitico_interp - y_rk4_interp)
-
-            ax4.plot(t_comun, error_y, color="#2E7D32", lw=2.0, label="Error Absoluto $|y_{analitica} - y_{RK4}|$")
-            ax4.set_title("Validación Numérica: Error Absoluto de Integración RK4", fontweight="bold")
-            ax4.set_xlabel("Tiempo $t$ [s]")
-            ax4.set_ylabel("Error en $y$ [m]")
-            ax4.set_yscale("log")
-            ax4.grid(True, which="both", linestyle="--", alpha=0.6)
-            ax4.legend(loc="upper left")
-
-        plt.suptitle("Estudio Cinemático y Dinámico Integral del Proyectil", fontsize=15, fontweight="bold", y=0.99)
-        plt.tight_layout()
-
         if guardar_ruta:
             fig.savefig(guardar_ruta, dpi=300)
         return fig

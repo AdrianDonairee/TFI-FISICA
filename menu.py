@@ -219,29 +219,25 @@ def menu_opciones_visualizacion(opciones: Dict[str, Any]) -> Dict[str, Any]:
         print("│            CONFIGURACIÓN DE VISUALIZACIÓN                │")
         print("├" + "─" * 58 + "┤")
         estado_graf_tray = "ACTIVADO" if opciones["mostrar_grafico_trayectoria"] else "DESACTIVADO"
-        estado_graf_cin = "ACTIVADO" if opciones["mostrar_grafico_cinematica"] else "DESACTIVADO"
         estado_anim = "ACTIVADO" if opciones["mostrar_animacion"] else "DESACTIVADO"
         print(f"│  [1] Gráfico de Trayectoria 2D       : [{estado_graf_tray:<12}] │")
-        print(f"│  [2] Panel Cinemático Completo (4x4) : [{estado_graf_cin:<12}] │")
-        print(f"│  [3] Animación 2D en Tiempo Real     : [{estado_anim:<12}] │")
-        print(f"│  [4] Velocidad de Animación          : [{opciones['factor_velocidad']:.1f}x{' ' * 9}] │")
-        print(f"│  [5] Paso Temporal Simulación (dt)   : [{opciones['dt']:.4f} s{' ' * 7}] │")
+        print(f"│  [2] Animación 2D en Tiempo Real     : [{estado_anim:<12}] │")
+        print(f"│  [3] Velocidad de Animación          : [{opciones['factor_velocidad']:.1f}x{' ' * 9}] │")
+        print(f"│  [4] Paso Temporal Simulación (dt)   : [{opciones['dt']:.4f} s{' ' * 7}] │")
         print("│  [0] Volver al Menú Principal                            │")
         print("└" + "─" * 58 + "┘")
 
-        opc = input("  👉 Seleccione opción a alternar o modificar [0-5]: ").strip()
+        opc = input("  👉 Seleccione opción a alternar o modificar [0-4]: ").strip()
         if opc == "0":
             break
         elif opc == "1":
             opciones["mostrar_grafico_trayectoria"] = not opciones["mostrar_grafico_trayectoria"]
         elif opc == "2":
-            opciones["mostrar_grafico_cinematica"] = not opciones["mostrar_grafico_cinematica"]
-        elif opc == "3":
             opciones["mostrar_animacion"] = not opciones["mostrar_animacion"]
-        elif opc == "4":
+        elif opc == "3":
             nuevo_factor = leer_flotante("Factor de velocidad (1.0 = real, 0.5 = lenta)", opciones["factor_velocidad"], min_val=0.1, max_val=5.0)
             opciones["factor_velocidad"] = nuevo_factor
-        elif opc == "5":
+        elif opc == "4":
             nuevo_dt = leer_flotante("Paso de tiempo dt [s] (ej. 0.001)", opciones["dt"], min_val=0.00001, max_val=0.1, permitir_cero=False)
             opciones["dt"] = nuevo_dt
 
